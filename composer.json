@@ -1,7 +1,7 @@
 {
-    "name": "varavin/easyii",
+    "name": "noumo/easyii",
     "version": "dev-master",
-    "description": "Easy CMS based on Yii2 Framework - Development package - forked by varavin",
+    "description": "Easy CMS based on Yii2 Framework - Development package",
     "keywords": ["easyii"],
     "homepage": "http://easyiicms.com",
     "type": "yii2-extension",
@@ -14,8 +14,8 @@
     },
     "authors": [
         {
-            "name": "Alexei Varavin",
-            "email": "varavin@gmail.com",
+            "name": "Ivan Vasilkov",
+            "email": "noumohope@gmail.com",
             "role" : "Developer"
         }
     ],

@@ -19,7 +19,7 @@ class Photo extends \yii\easyii\components\ActiveRecord
     {
         return [
             [['class', 'item_id'], 'required'],
-            ['item_id', 'integer'],
+            [['item_id', 'show_on_main', 'show_on_main_order'], 'integer'],
             ['image', 'image'],
             ['description', 'trim']
         ];

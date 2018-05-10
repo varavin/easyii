@@ -53,8 +53,14 @@ $(function(){
     $('.switch').switcher({copy: {en: {yes: '', no: ''}}}).on('change', function(){
         var checkbox = $(this);
         checkbox.switcher('setDisabled', true);
+        var linkOnOff = '';
+        if (checkbox.data('link-off') && checkbox.data('link-on')) {
+            linkOnOff = checkbox.is(':checked') ? checkbox.data('link-on') : checkbox.data('link-off')
+        } else {
+            linkOnOff = checkbox.is(':checked') ? 'on' : 'off'
+        }
 
-        $.getJSON(checkbox.data('link') + '/' + (checkbox.is(':checked') ? 'on' : 'off') + '/' + checkbox.data('id'), function(response){
+        $.getJSON(checkbox.data('link') + '/' + linkOnOff + '/' + checkbox.data('id'), function(response){
             if(response.result === 'error'){
                 alert(response.error);
             }

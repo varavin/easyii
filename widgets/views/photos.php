@@ -23,6 +23,9 @@ $photoTemplate = '<tr data-id="{{photo_id}}">'.(IS_ROOT ? '<td>{{photo_id}}</td>
         <textarea class="form-control photo-description">{{photo_description}}</textarea>\
         <a href="' . Url::to(['/admin/photos/description/{{photo_id}}']) . '" class="btn btn-sm btn-primary disabled save-photo-description">'. Yii::t('easyii', 'Save') .'</a>\
     </td>\
+    <td>\
+        <input type="checkbox" class="switch" {{photo_show_on_main}} name="" value="{{photo_show_on_main}}" data-id="{{photo_id}}" data-link="/admin/photos" data-link-on="show-on-main-on" data-link-off="show-on-main-off" data-reload="0">
+    </td>\
     <td class="control vtop">\
         <div class="btn-group btn-group-sm" role="group">\
             <a href="' . Url::to(['/admin/photos/up/{{photo_id}}'] + $linkParams) . '" class="btn btn-default move-up" title="'. Yii::t('easyii', 'Move up') .'"><span class="glyphicon glyphicon-arrow-up"></span></a>\
@@ -49,14 +52,15 @@ $photoTemplate = str_replace('>\\', '>', $photoTemplate);
         <?php endif; ?>
         <th width="150"><?= Yii::t('easyii', 'Image') ?></th>
         <th><?= Yii::t('easyii', 'Description') ?></th>
+        <th><?= Yii::t('easyii', 'Show on main') ?></th>
         <th width="150"></th>
     </tr>
     </thead>
     <tbody>
     <?php foreach($photos as $photo) : ?>
         <?= str_replace(
-            ['{{photo_id}}', '{{photo_thumb}}', '{{photo_image}}', '{{photo_description}}'],
-            [$photo->primaryKey, Image::thumb($photo->image, Photo::PHOTO_THUMB_WIDTH, Photo::PHOTO_THUMB_HEIGHT), $photo->image, $photo->description],
+            ['{{photo_id}}', '{{photo_thumb}}', '{{photo_image}}', '{{photo_description}}', '{{photo_show_on_main}}'],
+            [$photo->primaryKey, Image::thumb($photo->image, Photo::PHOTO_THUMB_WIDTH, Photo::PHOTO_THUMB_HEIGHT), $photo->image, $photo->description, ($photo->show_on_main ? 'checked="checked"' : '')],
             $photoTemplate)
         ?>
     <?php endforeach; ?>

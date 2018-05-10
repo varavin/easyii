@@ -48,4 +48,17 @@ class SortableController extends \yii\base\Behavior
 
         return $this->owner->formatResponse($success);
     }
+
+    public function setCheckbox($id, $field, $checked = 0)
+	{
+		$modelClass = $this->model;
+		if(($model = $modelClass::findOne($id))){
+			$model->$field = $checked;
+			$model->save();
+		}
+		else{
+			$this->error = Yii::t('easyii', 'Not found');
+		}
+		return $this->owner->formatResponse(Yii::t('easyii', 'Status successfully changed'));
+	}
 }

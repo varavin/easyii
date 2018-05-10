@@ -156,4 +156,15 @@ class PhotosController extends Controller
     {
         return $this->move($id, 'down', ['class' => $class, 'item_id' => $item_id]);
     }
+
+	public function actionShowOnMainOn($id)
+	{
+		return $this->setCheckbox($id, 'show_on_main', 1);
+	}
+
+	public function actionShowOnMainOff($id)
+	{
+		return $this->setCheckbox($id, 'show_on_main', 0);
+	}
+
 }

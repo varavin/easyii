@@ -2,6 +2,7 @@
 
 use yii\db\Schema;
 use yii\db\Migration;
+use yii\easyii\modules\blog\models\Blog;
 
 class m180516_235512_add_blog_module extends Migration
 {
@@ -17,8 +18,8 @@ class m180516_235512_add_blog_module extends Migration
 			'time' => Schema::TYPE_INTEGER .  " DEFAULT '0'",
 			'views' => Schema::TYPE_INTEGER . " DEFAULT '0'",
 			'status' => Schema::TYPE_BOOLEAN . " DEFAULT '1'"
-		], $this->engine);
-		$this->createIndex('slug', News::tableName(), 'slug', true);
+		]);
+		$this->createIndex('slug', Blog::tableName(), 'slug', true);
     }
 
     public function down()

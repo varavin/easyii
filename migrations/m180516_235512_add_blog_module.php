@@ -3,7 +3,7 @@
 use yii\db\Schema;
 use yii\db\Migration;
 
-class m180510_154020_add_show_on_main_properties_to_photos extends Migration
+class m180516_235512_add_blog_module extends Migration
 {
     public function up()
     {

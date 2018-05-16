@@ -60,7 +60,7 @@ class Blog extends \yii\easyii\components\API
             ]);
 
             foreach($this->_adp->models as $model){
-                $this->_items[] = BlogObject($model);
+                $this->_items[] = new BlogObject($model);
             }
         }
         return $this->_items;

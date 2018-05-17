@@ -27,6 +27,7 @@ class m180516_235912_add_blocks_module extends Migration
 			'item_id' => 'pk',
 			'category_id' => Schema::TYPE_INTEGER,
 			'title' => Schema::TYPE_STRING . '(128) NOT NULL',
+			'link' => Schema::TYPE_STRING . '(1024) NOT NULL',
 			'image' => Schema::TYPE_STRING . '(128) DEFAULT NULL',
 			'short' => Schema::TYPE_STRING . '(1024) DEFAULT NULL',
 			'text' => Schema::TYPE_TEXT . ' NOT NULL',

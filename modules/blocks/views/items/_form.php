@@ -15,6 +15,7 @@ $module = $this->context->module->id;
     'options' => ['enctype' => 'multipart/form-data', 'class' => 'model-form']
 ]); ?>
 <?= $form->field($model, 'title') ?>
+<?= $form->field($model, 'link') ?>
 
 <?php if($this->context->module->settings['blocksThumb']) : ?>
     <?php if($model->image) : ?>

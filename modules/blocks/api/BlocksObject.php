@@ -27,7 +27,11 @@ class BlocksObject extends \yii\easyii\components\ApiObject
         return LIVE_EDIT ? API::liveEdit($this->model->title, $this->editLink) : $this->model->title;
     }
 
-    public function getShort(){
+	public function getLink(){
+		return LIVE_EDIT ? API::liveEdit($this->model->link, $this->editLink) : $this->model->link;
+	}
+
+	public function getShort(){
         return LIVE_EDIT ? API::liveEdit($this->model->short, $this->editLink) : $this->model->short;
     }
 

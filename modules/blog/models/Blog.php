@@ -39,7 +39,7 @@ class Blog extends \yii\easyii\components\ActiveRecord
         return [
             'title' => Yii::t('easyii', 'Title'),
             'text' => Yii::t('easyii', 'Text'),
-            'short' => Yii::t('easyii', 'Short'),
+            'short' => Yii::t('easyii/blog', 'Short'),
             'image' => Yii::t('easyii', 'Image'),
             'time' => Yii::t('easyii', 'Date'),
             'slug' => Yii::t('easyii', 'Slug'),

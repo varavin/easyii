@@ -1,10 +1,8 @@
 <?php
 namespace yii\easyii\modules\blocks\api;
 
-use Yii;
 use yii\data\ActiveDataProvider;
 use yii\easyii\components\API;
-use yii\easyii\models\Tag;
 use yii\easyii\modules\blocks\models\Item;
 use yii\helpers\Url;
 use yii\widgets\LinkPager;
@@ -12,57 +10,82 @@ use yii\widgets\LinkPager;
 class CategoryObject extends \yii\easyii\components\ApiObject
 {
     public $slug;
+    public $description;
     public $image;
     public $tree;
+    public $fields;
     public $depth;
 
     private $_adp;
-    private $_items;
+    private $_children;
 
     public function getTitle(){
         return LIVE_EDIT ? API::liveEdit($this->model->title, $this->editLink) : $this->model->title;
     }
 
-    public function pages($options = []){
+    public function getPages($options = []){
         return $this->_adp ? LinkPager::widget(array_merge($options, ['pagination' => $this->_adp->pagination])) : '';
     }
 
-    public function pagination(){
+    public function getPagination(){
         return $this->_adp ? $this->_adp->pagination : null;
     }
 
-    public function items($options = [])
+    public function getChildren()
     {
-        if(!$this->_items){
-            $this->_items = [];
-
-            $with = ['seo'];
-            if(Yii::$app->getModule('admin')->activeModules['blocks']->settings['enableTags']){
-                $with[] = 'tags';
-            }
-
-            $query = Item::find()->with('seo')->where(['category_id' => $this->id])->status(Item::STATUS_ON)->sortDate();
-
-            if(!empty($options['where'])){
-                $query->andFilterWhere($options['where']);
-            }
-            if(!empty($options['tags'])){
-                $query
-                    ->innerJoinWith('tags', false)
-                    ->andWhere([Tag::tableName() . '.name' => (new Item())->filterTagValues($options['tags'])])
-                    ->addGroupBy('item_id');
-            }
-
-            $this->_adp = new ActiveDataProvider([
-                'query' => $query,
-                'pagination' => !empty($options['pagination']) ? $options['pagination'] : []
-            ]);
-
-            foreach($this->_adp->models as $model){
-                $this->_items[] = new BlocksObject($model);
+        if($this->_children === null) {
+            $this->_children = [];
+            foreach ($this->model->children as $child) {
+                $this->_children[] = Blocks::cat($child);
             }
         }
-        return $this->_items;
+        return $this->_children;
+    }
+
+    public function getItems($options = [])
+    {
+        $result = [];
+        $query = Item::find()->with('seo')->where(['category_id' => $this->id])->status(Item::STATUS_ON);
+
+        if(!empty($options['where'])){
+            $query->andFilterWhere($options['where']);
+        }
+        if(!empty($options['orderBy'])){
+            $query->orderBy($options['orderBy']);
+        } else {
+            $query->sortDate();
+        }
+        if(!empty($options['filters'])){
+            $query = Blocks::applyFilters($options['filters'], $query);
+        }
+
+        $this->_adp = new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => !empty($options['pagination']) ? $options['pagination'] : []
+        ]);
+
+        foreach($this->_adp->models as $model){
+            $result[] = new ItemObject($model);
+        }
+        return $result;
+    }
+
+    public function fieldOptions($name, $firstOption = '')
+    {
+        $options = [];
+        if($firstOption) {
+            $options[''] = $firstOption;
+        }
+
+        foreach($this->fields as $field){
+            if($field->name == $name){
+                foreach($field->options as $option){
+                    $options[$option] = $option;
+                }
+                break;
+            }
+        }
+        return $options;
     }
 
     public function getEditLink(){

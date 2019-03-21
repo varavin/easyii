@@ -5,9 +5,7 @@ use yii\easyii\components\CategoryController;
 
 class AController extends CategoryController
 {
-    /** @var string  */
     public $categoryClass = 'yii\easyii\modules\blocks\models\Category';
-
-    /** @var string  */
+    public $modelClass = 'yii\easyii\modules\blocks\models\Item';
     public $moduleName = 'blocks';
 }

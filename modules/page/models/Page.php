@@ -2,9 +2,15 @@
 namespace yii\easyii\modules\page\models;
 
 use Yii;
+use yii\easyii\behaviors\CacheFlush;
+use yii\easyii\behaviors\JsonColumns;
 use yii\easyii\behaviors\SeoBehavior;
+use yii\easyii\behaviors\SlugBehavior;
+use yii\easyii\components\CategoryWithFieldsModel;
+use creocoder\nestedsets\NestedSetsBehavior;
+use yii\easyii\modules\page\PageModule;
 
-class Page extends \yii\easyii\components\ActiveRecord
+class Page extends CategoryWithFieldsModel
 {
     public static function tableName()
     {
@@ -19,7 +25,9 @@ class Page extends \yii\easyii\components\ActiveRecord
             ['title', 'string', 'max' => 128],
             ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')],
             ['slug', 'default', 'value' => null],
-            ['slug', 'unique'],
+            ['status', 'integer'],
+            ['status', 'default', 'value' => self::STATUS_ON],
+            [['fields', 'data'], 'safe'],
         ];
     }
 
@@ -35,7 +43,23 @@ class Page extends \yii\easyii\components\ActiveRecord
     public function behaviors()
     {
         return [
+            'cacheflush' => [
+                'class' => CacheFlush::className(),
+                'key' => [static::tableName().'_tree', static::tableName().'_flat']
+            ],
             'seoBehavior' => SeoBehavior::className(),
+            'sluggable' => [
+                'class' => SlugBehavior::className(),
+                'immutable' => PageModule::setting('slugImmutable')
+            ],
+            'nestedSets' => [
+                'class' => NestedSetsBehavior::className(),
+                'treeAttribute' => 'tree'
+            ],
+            'jsonColumns' => [
+                'class' => JsonColumns::className(),
+                'columns' => ['fields', 'data']
+            ],
         ];
     }
 }

@@ -12,5 +12,3 @@ This repository is development package (yii2 extension).
 #### Contacts ####
 
 Feel free to email me on noumohope@gmail.com
-
-...fork deploy test...

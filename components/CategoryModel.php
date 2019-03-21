@@ -2,10 +2,15 @@
 namespace yii\easyii\components;
 
 use Yii;
-use yii\behaviors\SluggableBehavior;
 use yii\easyii\behaviors\CacheFlush;
+use yii\easyii\behaviors\ImageFile;
 use yii\easyii\behaviors\SeoBehavior;
 use creocoder\nestedsets\NestedSetsBehavior;
+use yii\easyii\behaviors\SortableModel;
+use yii\easyii\behaviors\SlugBehavior;
+use yii\easyii\behaviors\Taggable;
+use yii\easyii\models\SeoText;
+use yii\web\NotFoundHttpException;
 
 /**
  * Base CategoryModel. Shared by categories
@@ -17,15 +22,24 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
     const STATUS_OFF = 0;
     const STATUS_ON = 1;
 
+    static $FLAT = [];
+    static $TREE = [];
+    static $RELATIONS = ['seo'];
+
+    public $parent;
+    public $children = [];
+
     public function rules()
     {
         return [
             ['title', 'required'],
             ['title', 'trim'],
-            ['title', 'string', 'max' => 128],
-            ['image', 'image'],
-            ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')],
+            [['title', 'slug'], 'string', 'max' => 128],
+            ['description', 'string', 'max' => 1024],
+            ['image_file', 'image'],
+            ['slug', 'match', 'pattern' => static::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')],
             ['slug', 'default', 'value' => null],
+            ['tagNames', 'safe'],
             ['status', 'integer'],
             ['status', 'default', 'value' => self::STATUS_ON]
         ];
@@ -35,50 +49,38 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
     {
         return [
             'title' => Yii::t('easyii', 'Title'),
-            'image' => Yii::t('easyii', 'Image'),
+            'description' => Yii::t('easyii', 'Description'),
+            'image_file' => Yii::t('easyii', 'Image'),
             'slug' => Yii::t('easyii', 'Slug'),
+            'tagNames' => Yii::t('easyii', 'Tags'),
         ];
     }
 
     public function behaviors()
     {
-        return [
+        $moduleSettings = Yii::$app->getModule('admin')->activeModules[Module::getModuleName(static::className())]->settings;
+        $behaviors = [
             'cacheflush' => [
                 'class' => CacheFlush::className(),
                 'key' => [static::tableName().'_tree', static::tableName().'_flat']
             ],
             'seoBehavior' => SeoBehavior::className(),
+            'taggabble' => Taggable::className(),
             'sluggable' => [
-                'class' => SluggableBehavior::className(),
-                'attribute' => 'title',
-                'ensureUnique' => true
+                'class' => SlugBehavior::className(),
+                'immutable' => !empty($moduleSettings['categorySlugImmutable']) ? $moduleSettings['categorySlugImmutable'] : false
             ],
-            'tree' => [
+            'nestedSets' => [
                 'class' => NestedSetsBehavior::className(),
                 'treeAttribute' => 'tree'
-            ]
+            ],
         ];
-    }
 
-    public function beforeSave($insert)
-    {
-        if (parent::beforeSave($insert)) {
-            if(!$insert && $this->image != $this->oldAttributes['image'] && $this->oldAttributes['image']){
-                @unlink(Yii::getAlias('@webroot').$this->oldAttributes['image']);
-            }
-            return true;
-        } else {
-            return false;
+        if(isset($moduleSettings['categoryThumb']) && $moduleSettings['categoryThumb']){
+            $behaviors['imageFileBehavior'] = ImageFile::className();
         }
-    }
 
-    public function afterDelete()
-    {
-        parent::afterDelete();
-
-        if($this->image) {
-            @unlink(Yii::getAlias('@webroot') . $this->image);
-        }
+        return $behaviors;
     }
 
     /**
@@ -115,12 +117,47 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
         $cache = Yii::$app->cache;
         $key = static::tableName().'_flat';
 
-        $flat = $cache->get($key);
-        if(!$flat){
-            $flat = static::generateFlat();
-            $cache->set($key, $flat, 3600);
+        if(empty(static::$FLAT[$key])) {
+
+            $flat = $cache->get($key);
+            if (!$flat) {
+                $flat = static::generateFlat();
+                $cache->set($key, $flat, 3600);
+            }
+            if(count($flat)) {
+                foreach ($flat as $id => $cat) {
+                    $model = new static([
+                        'id' => $id,
+                        'parent' => $cat->parent,
+                        'depth' => $cat->depth,
+                        'children' => $cat->children
+                    ]);
+
+                    $model->load((array)$cat, '');
+                    if(in_array('seo', static::$RELATIONS)) {
+                        $model->populateRelation('seo', new SeoText($cat->seo));
+                    }
+                    if(in_array('tags', static::$RELATIONS)) {
+                        $model->setTagNames($cat->tags);
+                    }
+                    $model->afterFind();
+                    static::$FLAT[$key][] = $model;
+                }
+            } else {
+                static::$FLAT[$key] = [];
+            }
         }
-        return $flat;
+        return static::$FLAT[$key];
+    }
+
+    public static function get($id_slug)
+    {
+        foreach(static::cats() as $cat){
+            if($cat->id == $id_slug || $cat->slug == $id_slug){
+                return $cat;
+            }
+        }
+        throw new NotFoundHttpException(Yii::t('easyii', 'Category not found'));
     }
 
     /**
@@ -129,7 +166,7 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
      */
     public static function generateTree()
     {
-        $collection = static::find()->with('seo')->sort()->asArray()->all();
+        $collection = static::find()->with(static::$RELATIONS)->sort()->asArray()->all();
         $trees = array();
         $l = 0;
 
@@ -160,7 +197,7 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
 
                 } else {
                     // Add node to parent
-                    $item['parent'] = $stack[$l - 1]->category_id;
+                    $item['parent'] = $stack[$l - 1]->id;
                     $i = count($stack[$l - 1]->children);
                     $stack[$l - 1]->children[$i] = (object)$item;
                     $stack[] = & $stack[$l - 1]->children[$i];
@@ -177,7 +214,7 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
      */
     public static function generateFlat()
     {
-        $collection = static::find()->with('seo')->sort()->asArray()->all();
+        $collection = static::find()->with(static::$RELATIONS)->sort()->asArray()->all();
         $flat = [];
 
         if (count($collection) > 0) {
@@ -185,11 +222,11 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
             $lastId = 0;
             foreach ($collection as $node) {
                 $node = (object)$node;
-                $id = $node->category_id;
+                $id = $node->id;
                 $node->parent = '';
 
                 if($node->depth > $depth){
-                    $node->parent = $flat[$lastId]->category_id;
+                    $node->parent = $flat[$lastId]->id;
                     $depth = $node->depth;
                 } elseif($node->depth == 0){
                     $depth = 0;
@@ -215,12 +252,32 @@ class CategoryModel extends \yii\easyii\components\ActiveRecord
         foreach($flat as &$node){
             $node->children = [];
             foreach($flat as $temp){
-                if($temp->parent == $node->category_id){
-                    $node->children[] = $temp->category_id;
+                if($temp->parent == $node->id){
+                    $node->children[] = $temp->id;
                 }
+            }
+            if(!empty($node->tags) && is_array($node->tags) && count($node->tags)){
+                $tags = [];
+                foreach($node->tags as $tag){
+                    $tags[] = $tag['name'];
+                }
+                $node->tags = $tags;
             }
         }
 
         return $flat;
+    }
+
+    public function create($parent_id = null)
+    {
+        if ($parent_id && ($parentCategory = static::findOne($parent_id))) {
+            $this->order_num = $parentCategory->order_num;
+            $this->appendTo($parentCategory);
+        } else {
+            $this->attachBehavior('sortable', SortableModel::className());
+            $this->makeRoot();
+        }
+
+        return $this->hasErrors() ? false : true;
     }
 }

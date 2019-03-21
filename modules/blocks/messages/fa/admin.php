@@ -1,26 +1,23 @@
 <?php
 return [
-    'Blockss' => 'مقالات',
-    'Blocks' => 'مقاله',
+    'Blocks' => 'محصولات',
+    'Category fields' => 'فیلدهای محصولات',
+    'Manage fields' => 'مدیریت فیلدها',
 
-    'Categories' => 'دسته بندی ها',
-    'Create category' => 'ایجاد دسته بندی',
-    'Edit category' => 'ویرایش دسته بندی',
-    ' Add subcategory' => 'اضافه کردن زیر بخش',
-    'Items' => 'آیتم ها',
-    'Short' => 'کوتاه',
+    'Add field' => 'افزودن فیلد',
+    'Save fields' => 'ذخیره کردن فیلد ها',
+    'Type options with `comma` as delimiter' => 'با کاما وارد کنید',
+    'Fields' => 'فیلد ها',
 
-    'Category created' => 'دسته بندی ایجاد شد',
-    'Category updated' => 'دسته بندی ویرایش شد',
-    'Category deleted' => 'دسته بندی حذف شد',
-    'Category image cleared' => 'عکس دسته بندی پاک شد',
+    'Item created' => 'آیتم ایجاد شد',
+    'Item updated' => 'آیتم ویرایش شد',
+    'Item deleted' => 'آیتم حذف شد',
 
-    'Create blocks' => 'ایجاد مقاله',
-    'Edit blocks' => 'ویرایش مقاله',
-    'Blocks created' => 'مقاله ایجاد شد',
-    'Blocks updated' => 'مقاله ویرایش شد',
-    'Blocks deleted' => 'مقاله حذف شد',
-
-    'Clear image' => 'پاک کردن عکس',
-    'Image cleared' => 'عکس پاک شد',
+    'Title' => 'عنوان',
+    'Type' => 'نوع',
+    'Options' => 'انتخاب ها',
+    'Available' => 'در دسترس',
+    'Price' => 'قیمت',
+    'Discount' => 'تخفیف',
+    'Select' => 'انتخاب',
 ];

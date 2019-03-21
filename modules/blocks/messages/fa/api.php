@@ -1,4 +1,4 @@
 <?php
 return [
-    'Create category' => 'Создать категорию',
+    'Create category' => 'ایجاد دسته',
 ];

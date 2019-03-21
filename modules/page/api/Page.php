@@ -4,6 +4,7 @@ namespace yii\easyii\modules\page\api;
 use Yii;
 use yii\easyii\modules\page\models\Page as PageModel;
 use yii\helpers\Html;
+use yii\web\NotFoundHttpException;
 
 /**
  * Page module API
@@ -26,16 +27,23 @@ class Page extends \yii\easyii\components\API
 
     private function findPage($id_slug)
     {
-        $page = PageModel::find()->where(['or', 'page_id=:id_slug', 'slug=:id_slug'], [':id_slug' => $id_slug])->one();
+        try {
+            $result = new PageObject(PageModel::get($id_slug));
+        } catch (NotFoundHttpException $e) {
+            $result = $this->notFound($id_slug);
+        }
 
-        return $page ? new PageObject($page) : $this->notFound($id_slug);
+        return $result;
     }
 
     private function notFound($id_slug)
     {
-        $page = new PageModel([
-            'slug' => $id_slug
-        ]);
-        return new PageObject($page);
+        $config = ['slug' => $id_slug];
+        if(IS_ROOT && preg_match(PageModel::$SLUG_PATTERN, $id_slug)){
+            $config['title'] = $config['text'] = Html::a(Yii::t('easyii/page/api', 'Create page'), ['/admin/page/a/create', 'slug' => $id_slug], ['target' => '_blank']);
+        } else {
+            throw new NotFoundHttpException(Yii::t('easyii', 'Page not found'));
+        }
+        return new PageObject(new PageModel($config));
     }
 }

@@ -2,11 +2,12 @@
 namespace yii\easyii\modules\blocks\models;
 
 use Yii;
-use yii\behaviors\SluggableBehavior;
+use yii\easyii\behaviors\ImageFile;
+use yii\easyii\behaviors\JsonColumns;
 use yii\easyii\behaviors\SeoBehavior;
-use yii\easyii\behaviors\Taggable;
+use yii\easyii\behaviors\SlugBehavior;
 use yii\easyii\models\Photo;
-use yii\helpers\StringHelper;
+use yii\easyii\modules\blocks\BlocksModule;
 
 class Item extends \yii\easyii\components\ActiveRecord
 {
@@ -21,17 +22,19 @@ class Item extends \yii\easyii\components\ActiveRecord
     public function rules()
     {
         return [
-            [['title'], 'required'],
-            [['title', 'short', 'text'], 'trim'],
+            ['title', 'required'],
+            ['title', 'trim'],
             ['title', 'string', 'max' => 128],
-			['link', 'string', 'max' => 1024],
-            ['image', 'image'],
-            [['category_id', 'views', 'time', 'status'], 'integer'],
+            ['image_file', 'image'],
+            ['description', 'safe'],
+            ['price', 'number'],
+            ['discount', 'integer', 'max' => 99],
+            [['status', 'category_id', 'available', 'time'], 'integer'],
             ['time', 'default', 'value' => time()],
             ['slug', 'match', 'pattern' => self::$SLUG_PATTERN, 'message' => Yii::t('easyii', 'Slug can contain only 0-9, a-z and "-" characters (max: 128).')],
             ['slug', 'default', 'value' => null],
+            ['available', 'default', 'value' => 1],
             ['status', 'default', 'value' => self::STATUS_ON],
-            ['tagNames', 'safe']
         ];
     }
 
@@ -39,65 +42,79 @@ class Item extends \yii\easyii\components\ActiveRecord
     {
         return [
             'title' => Yii::t('easyii', 'Title'),
-            'text' => Yii::t('easyii', 'Text'),
-            'link' => Yii::t('easyii/blocks', 'Link'),
-            'short' => Yii::t('easyii/blocks', 'Short'),
-            'image' => Yii::t('easyii', 'Image'),
+            'category_id' => Yii::t('easyii', 'Category'),
+            'image_file' => Yii::t('easyii', 'Image'),
+            'description' => Yii::t('easyii', 'Description'),
+            'available' => Yii::t('easyii/blocks', 'Available'),
+            'price' => Yii::t('easyii/blocks', 'Price'),
+            'discount' => Yii::t('easyii/blocks', 'Discount'),
             'time' => Yii::t('easyii', 'Date'),
             'slug' => Yii::t('easyii', 'Slug'),
-            'tagNames' => Yii::t('easyii', 'Tags'),
         ];
     }
 
     public function behaviors()
     {
-        return [
+        $behaviors = [
             'seoBehavior' => SeoBehavior::className(),
-            'taggabble' => Taggable::className(),
             'sluggable' => [
-                'class' => SluggableBehavior::className(),
-                'attribute' => 'title',
-                'ensureUnique' => true
-            ]
+                'class' => SlugBehavior::className(),
+                'immutable' => BlocksModule::setting('itemSlugImmutable')
+            ],
+            'jsonColumns' => [
+                'class' => JsonColumns::className(),
+                'columns' => ['fields', 'data']
+            ],
         ];
+        if(BlocksModule::setting('itemThumb')){
+            $behaviors['imageFileBehavior'] = ImageFile::className();
+        }
+        return $behaviors;
     }
 
-    public function getCategory()
-    {
-        return $this->hasOne(Category::className(), ['category_id' => 'category_id']);
+    public function afterSave($insert, $attributes){
+        parent::afterSave($insert, $attributes);
+
+        ItemData::deleteAll(['item_id' => $this->primaryKey]);
+
+        foreach($this->data as $name => $value){
+            if(!is_array($value)){
+                $this->insertDataValue($name, $value);
+            } else {
+                foreach($value as $arrayItem){
+                    $this->insertDataValue($name, $arrayItem);
+                }
+            }
+        }
+    }
+
+    private function insertDataValue($name, $value){
+        Yii::$app->db->createCommand()->insert(ItemData::tableName(), [
+            'item_id' => $this->primaryKey,
+            'name' => $name,
+            'value' => $value
+        ])->execute();
     }
 
     public function getPhotos()
     {
-        return $this->hasMany(Photo::className(), ['item_id' => 'item_id'])->where(['class' => self::className()])->sort();
+        return $this->hasMany(Photo::className(), ['item_id' => 'id'])->where(['class' => self::className()])->sort();
     }
 
-    public function beforeSave($insert)
+    public function getCategory()
     {
-        if (parent::beforeSave($insert)) {
-            $settings = Yii::$app->getModule('admin')->activeModules['blocks']->settings;
-            $this->short = StringHelper::truncate($settings['enableShort'] ? $this->short : strip_tags($this->text), $settings['shortMaxLength']);
-
-            if(!$insert && $this->image != $this->oldAttributes['image'] && $this->oldAttributes['image']){
-                @unlink(Yii::getAlias('@webroot').$this->oldAttributes['image']);
-            }
-
-            return true;
-        } else {
-            return false;
-        }
+        return Category::get($this->category_id);
     }
 
     public function afterDelete()
     {
         parent::afterDelete();
 
-        if($this->image){
-            @unlink(Yii::getAlias('@webroot').$this->image);
-        }
-
         foreach($this->getPhotos()->all() as $photo){
             $photo->delete();
         }
+
+        ItemData::deleteAll(['item_id' => $this->primaryKey]);
     }
+
 }

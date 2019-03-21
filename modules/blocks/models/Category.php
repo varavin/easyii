@@ -1,7 +1,9 @@
 <?php
 namespace yii\easyii\modules\blocks\models;
 
-class Category extends \yii\easyii\components\CategoryModel
+use yii\easyii\components\CategoryWithFieldsModel;
+
+class Category extends CategoryWithFieldsModel
 {
     public static function tableName()
     {
@@ -10,14 +12,14 @@ class Category extends \yii\easyii\components\CategoryModel
 
     public function getItems()
     {
-        return $this->hasMany(Item::className(), ['category_id' => 'category_id'])->sortDate();
+        return $this->hasMany(Item::className(), ['category_id' => 'id'])->sortDate();
     }
 
     public function afterDelete()
     {
         parent::afterDelete();
 
-        foreach ($this->getItems()->all() as $item) {
+        foreach($this->getItems()->all() as $item){
             $item->delete();
         }
     }

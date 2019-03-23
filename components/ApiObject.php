@@ -10,7 +10,7 @@ use yii\easyii\helpers\Image;
  * @var integer $id
  * @var string $image
  */
-class ApiObject extends \yii\base\Object
+class ApiObject extends \yii\base\BaseObject
 {
     /** @var \yii\base\Model  */
     public $model;
